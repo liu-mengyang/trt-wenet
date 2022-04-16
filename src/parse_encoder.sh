@@ -7,5 +7,7 @@ trtexec \
 	--optShapes=speech:16x64x80,speech_lengths:16 \
 	--maxShapes=speech:64x256x80,speech_lengths:64 \
 	--saveEngine=encoder-FP32.plan \
+	--workspace=20000 \
 	--buildOnly \
 	--verbose \
+
