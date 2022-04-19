@@ -171,5 +171,8 @@ castaf_not_1931 = not_1931.o()
 not_1931.outputs = castaf_not_1931.outputs
 castaf_not_1931.outputs.clear()
 
+# Remove unuseful layers
+
+
 graph.cleanup().toposort()
 onnx.save(gs.export_onnx(graph), "encoder_sed.onnx")
