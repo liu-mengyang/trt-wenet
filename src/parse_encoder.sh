@@ -10,5 +10,6 @@ trtexec \
 	--saveEngine=encoder.plan \
 	--workspace=20000 \
 	--buildOnly \
+	--fp16 \
 	--verbose \
 
