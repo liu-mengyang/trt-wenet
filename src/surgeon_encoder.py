@@ -12,7 +12,7 @@ graph.nodes.append(cast1)
 slice_79 = [node for node in graph.nodes if node.name=="Slice_79"][0]
 slice_79.inputs[0] = cast_out1
 
-slice_84 = [node for node in graph.nodes if node.name=="Slice_84"][0]
+slice_84 = [node for node in graph.nodes if node.name=="Slice_84"][0] # 看来这个节点就是造成问题的核心
 
 cast_out2 = gs.Variable("cast_out2", dtype=np.bool)
 cast2 = gs.Node(name="my_cast_2", op="Cast", inputs=slice_84.outputs, outputs=[cast_out2], attrs={"to":getattr(onnx.TensorProto, 'BOOL')})
@@ -35,12 +35,15 @@ graph.nodes.append(cast4)
 not_350 = [node for node in graph.nodes if node.name=="Not_350"][0]
 not_350.inputs[0] = cast_out4
 
-cast_out5 = gs.Variable("cast_out5", dtype=np.bool)
+# ↓↓↓↓↓待修改的节点名叫Not_361，需要在其输入部分加一层类型转换，把INT转BOOL↓↓↓↓↓
+cast_out5 = gs.Variable("cast_out5", dtype=np.bool) # ←定义一个作为输入的变量cast_out5
+# ↓定义一个节点（计算过程），以前面定义的slice_84的输出作为输入，将其进行类型转换，输出到变量cast_out5中
 cast5 = gs.Node(name="my_cast_5", op="Cast", inputs=slice_84.outputs, outputs=[cast_out5], attrs={"to":getattr(onnx.TensorProto, 'BOOL')})
-graph.nodes.append(cast5)
+graph.nodes.append(cast5) # ←节点加入图中
 
-not_361 = [node for node in graph.nodes if node.name=="Not_361"][0]
-not_361.inputs[0] = cast_out5
+not_361 = [node for node in graph.nodes if node.name=="Not_361"][0] # ←找到待修改的节点Not_361
+not_361.inputs[0] = cast_out5 # 删除其原有的输入，把进行类型转换后输出的变量cast_out5作为它的输入，从而完成类型转换层的添加
+# ↑↑↑↑待修改的节点名叫Not_361，需要在其输入部分加一层类型转换，把INT转BOOL↑↑↑↑
 
 cast_out6 = gs.Variable("cast_out6", dtype=np.bool)
 cast6 = gs.Node(name="my_cast_6", op="Cast", inputs=slice_84.outputs, outputs=[cast_out6], attrs={"to":getattr(onnx.TensorProto, 'BOOL')})
