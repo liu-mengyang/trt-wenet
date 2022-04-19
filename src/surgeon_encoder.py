@@ -21,17 +21,20 @@ graph.nodes.append(cast1)
 slice_79 = [node for node in graph.nodes if node.name=="Slice_79"][0]
 slice_79.inputs[0] = cast_out1
 
-slice_84 = [node for node in graph.nodes if node.name=="Slice_84"][0]
+slice_84 = [node for node in graph.nodes if node.name=="Slice_84"][0] # 看来这个节点就是造成问题的核心
 
-cast_out2 = gs.Variable("cast_out2", dtype=np.bool)
+# ↓↓↓↓↓待修改的节点名叫Not_193，需要在其输入部分加一层类型转换，把INT转BOOL↓↓↓↓↓
+cast_out2 = gs.Variable("cast_out2", dtype=np.bool) # ←定义一个作为输入的变量cast_out2
+# ↓定义一个节点（计算过程），以前面定义的slice_84的输出作为输入，将其进行类型转换，输出到变量cast_out2中
 cast2 = gs.Node(name="my_cast_2", op="Cast", inputs=slice_84.outputs, outputs=[cast_out2], attrs={"to":getattr(onnx.TensorProto, 'BOOL')})
-graph.nodes.append(cast2)
+graph.nodes.append(cast2) # ←节点加入图中
 
-not_193 = [node for node in graph.nodes if node.name=="Not_193"][0]
-not_193.inputs[0] = cast_out2
-castaf_not_193 = not_193.o()
-not_193.outputs = castaf_not_193.outputs
-castaf_not_193.outputs.clear()
+not_193 = [node for node in graph.nodes if node.name=="Not_193"][0] # ←找到待修改的节点Not_193
+not_193.inputs[0] = cast_out2 # 删除其原有的输入，把进行类型转换后输出的变量cast_out2作为它的输入，从而完成类型转换层的添加
+castaf_not_193 = not_193.o() # 定位其原本的下一层，也是一个Cast算子，但是由于在输入进行了转换，不必再次转换
+not_193.outputs = castaf_not_193.outputs # 将其下一层的输出作为该层的输出
+castaf_not_193.outputs.clear() # 删除原本存在的多余的cast层
+# ↑↑↑↑待修改的节点名叫Not_193，需要在其输入部分加一层类型转换，把INT转BOOL↑↑↑↑
 
 not_204 = [node for node in graph.nodes if node.name=="Not_204"][0]
 not_204.inputs[0] = cast_out2
@@ -40,6 +43,7 @@ not_204.outputs = castaf_not_204.outputs
 castaf_not_204.outputs.clear()
 
 not_350 = [node for node in graph.nodes if node.name=="Not_350"][0]
+
 not_350.inputs[0] = cast_out2
 castaf_not_350 = not_350.o()
 not_350.outputs = castaf_not_350.outputs
