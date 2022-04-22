@@ -10,6 +10,6 @@ trtexec \
 	--saveEngine=decoder.plan \
 	--workspace=40960 \
 	--buildOnly \
-	--fp16 \
+	--noTF32 \
 	--verbose \
 

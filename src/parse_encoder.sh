@@ -8,8 +8,7 @@ trtexec \
 	--optShapes=speech:16x64x80,speech_lengths:16 \
 	--maxShapes=speech:64x256x80,speech_lengths:64 \
 	--saveEngine=encoder.plan \
-	--workspace=20000 \
+	--workspace=40960 \
 	--buildOnly \
-	--fp16 \
 	--verbose \
 
