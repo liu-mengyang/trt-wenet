@@ -8,6 +8,7 @@ trtexec \
 	--optShapes=encoder_out:16x64x256,encoder_out_lens:16,hyps_pad_sos_eos:16x10x64,hyps_lens_sos:16x10,ctc_score:16x10 \
 	--maxShapes=encoder_out:64x256x256,encoder_out_lens:64,hyps_pad_sos_eos:64x10x64,hyps_lens_sos:64x10,ctc_score:64x10 \
 	--saveEngine=decoder.plan \
+	--plugins=/target/LayerNormPlugin.so \
 	--workspace=40960 \
 	--buildOnly \
 	--noTF32 \
