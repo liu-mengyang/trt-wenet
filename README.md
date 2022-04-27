@@ -12,7 +12,16 @@ A TensorRT8 implementation of WeNet
 
 ## 如何使用？
 
-需要首先通过DOCKERFILE安装好容器镜像并进入容器，再进行后面的操作。
+### 配置环境
+
+首次启动
+
+```sh
+docker build -t trt2022 .
+docker run --gpus all --rm --name trt2022 -it -v "$(pwd)/src:/target" trt2022 bash
+```
+
+### 使用之
 
 ```bash
 cd /target
@@ -27,14 +36,14 @@ cd /target
 - 单独生成encoder的plan文件
 
   ```bash
-  make
+  make all
   bash parse_encoder.sh
   ```
 
 - 单独生成decoder的plan文件
 
   ```bash
-  make
+  make all
   bash parse_decoder.sh
   ```
 
