@@ -50,7 +50,7 @@ cd /target
 - 测试
 
   ```bash
-  python /workspace/testEncoderandDecoder.py
+  python /workspace/testEncoderAndDecoder.py
   ```
 
   查看性能表现。
