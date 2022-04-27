@@ -50,6 +50,7 @@ cd /target
 - 测试
 
   ```bash
+  python testLayerNormPlugin.py
   python /workspace/testEncoderAndDecoder.py
   ```
 
