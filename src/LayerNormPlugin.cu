@@ -88,8 +88,8 @@ __global__ void layerNormKernel(T *pInput, T *pOutput, float epsilon, const int 
 int32_t LayerNormPlugin::enqueue(const PluginTensorDesc *inputDesc, const PluginTensorDesc *outputDesc, const void *const *inputs, void *const *outputs, void *workspace, cudaStream_t stream) noexcept
 {
     WHERE_AM_I();
-    int nBlock = inputDesc[0].dims.d[0], N = 1;
-    for (int i = 1; i < inputDesc[0].dims.nbDims; ++i)
+    int nBlock = inputDesc[0].dims.d[0] * inputDesc[0].dims.d[1], N = 1;
+    for (int i = 2; i < inputDesc[0].dims.nbDims; ++i)
     {
         N *= inputDesc[0].dims.d[i];
     }
