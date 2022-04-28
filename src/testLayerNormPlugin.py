@@ -117,6 +117,8 @@ if __name__ == '__main__':
     cudart.cudaStreamSynchronize(stream)
 
     resCPU = layerNormCPU(bufferH, globalEpsilon)
+    print("CPU:", resCPU[0])
+    print("GPU:", bufferH[-1])
     print("check result:", check(resCPU[0], bufferH[-1], True))
 
     print("Test <%s> finish!" % testCase)
