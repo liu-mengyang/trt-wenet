@@ -22,10 +22,10 @@ def check(a, b, weak=False):
 
 def layerNormCPU(bufferH, epsilon):
     _x = bufferH[0]
-    _0 = np.mean(_x.reshape(_x.shape[0], -1), 1)[:, np.newaxis, np.newaxis, np.newaxis]
+    _0 = np.mean(_x.reshape(_x.shape[0], _x.shape[1], -1), 2)[:, :, np.newaxis, np.newaxis]
     _1 = _x - _0
     _2 = _1 * _1
-    _3 = np.mean(_2.reshape(_x.shape[0], -1), 1)[:, np.newaxis, np.newaxis, np.newaxis]
+    _3 = np.mean(_2.reshape(_x.shape[0], _x.shape[1], -1), 2)[:, :, np.newaxis, np.newaxis]
     _4 = _3 + epsilon
     _5 = np.sqrt(_4)
     _6 = 1 / _5  # 1/sqrt(...)
