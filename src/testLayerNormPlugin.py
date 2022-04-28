@@ -40,7 +40,7 @@ def getLayerNormPlugin():
     return None
 
 if __name__ == '__main__':
-    os.system("rm -f ./*.plan")
+    os.system("rm -f ./model-*.plan")
     np.set_printoptions(precision=4, linewidth=200, suppress=True)
     testCase = "fp%s" % ('16' if int(npDataType == np.float16) else '32')
     print("Test <%s>" % testCase)
