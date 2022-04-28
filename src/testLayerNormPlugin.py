@@ -8,7 +8,8 @@ from cuda import cudart
 soFilePath = "./LayerNormPlugin.so"
 nTime = 30
 
-nIn, cIn, hIn, wIn = 2, 3, 4, 5
+#nIn, cIn, hIn, wIn = 2, 3, 4, 5
+nIn, cIn, hIn, wIn = 3, 4, 50, 60
 npDataType = np.float32
 globalEpsilon = 1e-5
 np.random.seed(97)
