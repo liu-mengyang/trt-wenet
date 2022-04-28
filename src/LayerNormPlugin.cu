@@ -28,7 +28,7 @@ __global__ void layerNormKernel(T *pInput, T *pOutput, float epsilon, const int 
     }
     // T &ref0 = _sum;
     // T sum = BlockReduce(temp).Sum(ref0);
-    BlockReduce[tx] = _sum / (T)_ReduceN;
+    BlockReduce[tx] = _ReduceN > 0 ? _sum / (T)_ReduceN : (T)0;
     BlockReduceN[tx] = _ReduceN;
     __syncthreads();
     
