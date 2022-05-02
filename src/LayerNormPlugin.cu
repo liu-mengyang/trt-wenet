@@ -147,14 +147,13 @@ int32_t LayerNormPlugin::enqueue(const PluginTensorDesc *inputDesc, const Plugin
     {
         N *= inputDesc[0].dims.d[i];
     }
-    int threadsPerBlock = 1024;
     if (inputDesc[0].type == DataType::kFLOAT)
     {
-        layerNormKernel<float><<<nBlock, threadsPerBlock, 0, stream>>>((float*)inputs[0], (float*)outputs[0], epsilon_, N);
+        layerNormKernel<float><<<nBlock, 1024, 0, stream>>>((float*)inputs[0], (float*)outputs[0], epsilon_, N);
     }
-    else
+    else if (inputDesc[0].type == DataType::kHALF)
     {
-        layerNormKernel<float><<<nBlock, threadsPerBlock, 0, stream>>>((float*)inputs[0], (float*)outputs[0], epsilon_, N);
+        layerNormKernel<float><<<nBlock, 1024, 0, stream>>>((float*)inputs[0], (float*)outputs[0], epsilon_, N);
     }
     return 0;
 }
