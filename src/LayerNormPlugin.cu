@@ -127,7 +127,7 @@ __global__ void layerNormKernel(T *pInput, T *pOutput, float epsilon, const int 
     __shared__ T mean_shared, var_shared;
     if (threadIdx.x == 0) { // 那么此时，0号Thread上的就是最终结果了
         mean_shared = mean;
-        var_shared = m2 / count;
+        var_shared = Div(m2, count);
     }
     __syncthreads();
     mean = mean_shared;
