@@ -153,7 +153,7 @@ int32_t LayerNormPlugin::enqueue(const PluginTensorDesc *inputDesc, const Plugin
     }
     else if (inputDesc[0].type == DataType::kHALF)
     {
-        layerNormKernel<float><<<nBlock, 1024, 0, stream>>>((float*)inputs[0], (float*)outputs[0], epsilon_, N);
+        layerNormKernel<__half><<<nBlock, 1024, 0, stream>>>((__half*)inputs[0], (__half*)outputs[0], epsilon_, N);
     }
     return 0;
 }
