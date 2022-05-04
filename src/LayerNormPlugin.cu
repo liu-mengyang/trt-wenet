@@ -6,12 +6,14 @@ PluginFieldCollection    LayerNormPluginCreator::fc_ {};
 std::vector<PluginField> LayerNormPluginCreator::attr_;
 
 template<typename T>
-__inline__ __device__ T Div(T a, T b);
-
-template<>
-__inline__ __device__ float Div<float>(float a, float b) {
-  return a / b;
+__inline__ __device__ T Div(T a, T b) {
+    return a / b;
 }
+
+// template<>
+// __inline__ __device__ float Div<float>(float a, float b) {
+//   return a / b;
+// }
 
 /* https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 # For a new value newValue, compute the new count, new mean, the new M2.
@@ -58,7 +60,7 @@ def parallel_variance(n_a, avg_a, M2_a, n_b, avg_b, M2_b):
 */
 template<typename T> // 并行式Welford
 inline __device__ void WelfordCombine(T b_mean, T b_m2, T b_count, T* mean, T* m2, T* count) {
-  if (b_count == 0) { return; }
+  if ((int)b_count == 0) { return; }
   T new_count = *count + b_count;
   T delta = b_mean - *mean;
   T nb_over_n = Div(b_count, new_count);
@@ -153,7 +155,9 @@ int32_t LayerNormPlugin::enqueue(const PluginTensorDesc *inputDesc, const Plugin
     }
     else if (inputDesc[0].type == DataType::kHALF)
     {
-        layerNormKernel<__half><<<nBlock, 1024, 0, stream>>>((__half*)inputs[0], (__half*)outputs[0], epsilon_, N);
+        printf("error");
+        return -1;
+        layerNormKernel<float><<<nBlock, 1024, 0, stream>>>((float*)inputs[0], (float*)outputs[0], epsilon_, N);
     }
     return 0;
 }
