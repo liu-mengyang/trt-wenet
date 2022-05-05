@@ -155,8 +155,7 @@ int32_t LayerNormPlugin::enqueue(const PluginTensorDesc *inputDesc, const Plugin
     }
     else if (inputDesc[0].type == DataType::kHALF)
     {
-        printf("error");
-        return -1;
+        printf("fp16");
         layerNormKernel<float><<<nBlock, 1024, 0, stream>>>((float*)inputs[0], (float*)outputs[0], epsilon_, N);
     }
     return 0;

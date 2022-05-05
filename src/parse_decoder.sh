@@ -11,6 +11,6 @@ trtexec \
 	--plugins=/target/LayerNormPlugin.so \
 	--workspace=40960 \
 	--buildOnly \
-	--noTF32 \
+	--fp16 \
 	--verbose \
 
