@@ -71,6 +71,7 @@ else:
         if "MyLN" in layer.name:
             layer.precision = trt.DataType.FLOAT
             layer.get_output(0).dtype = trt.DataType.FLOAT
+            # layer.set_output_type(i, trt.DataType.FLOAT)
         # else:
         #     layer.precision = trt.DataType.HALF
         #     no = layer.num_outputs
