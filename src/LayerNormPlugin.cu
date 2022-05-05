@@ -6,11 +6,8 @@ PluginFieldCollection    LayerNormPluginCreator::fc_ {};
 std::vector<PluginField> LayerNormPluginCreator::attr_;
 
 template<typename T>
-__inline__ __device__ T Div(T a, T b);
-
-template<>
-__inline__ __device__ float Div<float>(float a, float b) {
-  return a / b;
+__inline__ __device__ T Div(T a, T b) {
+    return a / b;
 }
 
 /* https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
