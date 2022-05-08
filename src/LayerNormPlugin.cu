@@ -90,7 +90,7 @@ __inline__ __device__ void WelfordWarpAllReduce(T thread_mean, T thread_m2, T th
 }
 
 template<typename T>
-__global__ void layerNormKernel(T *pInput, T *pOutput, float epsilon, const int N)
+__global__ void layerNormKernel(T *pInput, T *pOutput, float epsilon, const int N, float* gamma, float* beta)
 {
     const int base_index = blockIdx.x * N;
 
@@ -132,7 +132,7 @@ __global__ void layerNormKernel(T *pInput, T *pOutput, float epsilon, const int 
     
     for (int i=threadIdx.x; i < N; i += blockDim.x) {
         T v = pInput[base_index + i];
-        pOutput[base_index + i] = (v - mean) * (T)rsqrtf(var + (T)epsilon);
+        pOutput[base_index + i] = (v - mean) * (T)rsqrtf(var + (T)epsilon) * gamma[i] + beta[i];
     }
 }
 
@@ -146,11 +146,11 @@ int32_t LayerNormPlugin::enqueue(const PluginTensorDesc *inputDesc, const Plugin
     }
     if (inputDesc[0].type == DataType::kFLOAT)
     {
-        layerNormKernel<float><<<nBlock, 1024, 0, stream>>>((float*)inputs[0], (float*)outputs[0], epsilon_, N);
+        layerNormKernel<float><<<nBlock, 1024, 0, stream>>>((float*)inputs[0], (float*)outputs[0], m_.epsilon_, N, m_.gamma_, m_.beta_);
     }
     else if (inputDesc[0].type == DataType::kHALF)
     {
-        layerNormKernel<float><<<nBlock, 1024, 0, stream>>>((float*)inputs[0], (float*)outputs[0], epsilon_, N);
+        layerNormKernel<float><<<nBlock, 1024, 0, stream>>>((float*)inputs[0], (float*)outputs[0], m_.epsilon_, N, m_.gamma_, m_.beta_);
     }
     return 0;
 }

@@ -27,20 +27,28 @@ class LayerNormPlugin : public IPluginV2DynamicExt
 private:
     std::string name_;
     std::string namespace_;
-    float       epsilon_;
+    struct
+    {
+        float       epsilon_;
+        float       gamma_[256];
+        float       beta_[256];
+    } m_;
 
 public:
-    LayerNormPlugin(const std::string &name, float epsilon):
-        name_(name), epsilon_(epsilon)
+    LayerNormPlugin(const std::string &name, float epsilon, const float* gamma, const float* beta):
+        name_(name)
     {
         WHERE_AM_I();
+        m_.epsilon_ = epsilon;
+        memcpy(&m_.gamma_, gamma, sizeof(gamma));
+        memcpy(&m_.beta_, beta, sizeof(beta));
     }
 
     LayerNormPlugin(const std::string &name, const void *data, size_t length):
         name_(name)
     {
         WHERE_AM_I();
-        memcpy(&epsilon_, data, sizeof(epsilon_));
+        memcpy(&m_, data, sizeof(m_));
     }
 
     LayerNormPlugin() = delete;
@@ -53,19 +61,19 @@ public:
     size_t getSerializationSize() const noexcept override
     {
         WHERE_AM_I();
-        return sizeof(epsilon_);
+        return sizeof(m_);
     }
 
     void serialize(void *buffer) const noexcept override
     {
         WHERE_AM_I();
-        memcpy(buffer, &epsilon_, sizeof(epsilon_));
+        memcpy(buffer, &m_, sizeof(m_));
     }
 
     IPluginV2DynamicExt *clone() const noexcept override
     {
         WHERE_AM_I();
-        return new LayerNormPlugin(name_, epsilon_);
+        return new LayerNormPlugin(name_, &m_, sizeof(m_));
     }
 
     int getNbOutputs() const noexcept override
@@ -171,6 +179,8 @@ public:
     {
         WHERE_AM_I();
         attr_.emplace_back(PluginField("epsilon", nullptr, PluginFieldType::kFLOAT32, 1));
+        attr_.emplace_back(PluginField("gamma", nullptr, PluginFieldType::kFLOAT32, 256));
+        attr_.emplace_back(PluginField("beta", nullptr, PluginFieldType::kFLOAT32, 256));
         fc_.nbFields = attr_.size();
         fc_.fields   = attr_.data();
     }
@@ -181,6 +191,8 @@ public:
     {
         WHERE_AM_I();
         float epsilon {1.0e-5f};
+        float gamma[256] {0};
+        float beta[256] {0};
         for (int i = 0; i < fc->nbFields; i++)
         {
             std::string field_name(fc->fields[i].name);
@@ -188,8 +200,18 @@ public:
             {
                 epsilon = *static_cast<const float *>(fc->fields[i].data);
             }
+
+            if (field_name.compare("gamma") == 0)
+            {
+                memcpy(gamma, fc->fields[i].data, sizeof(gamma));
+            }
+
+            if (field_name.compare("beta") == 0)
+            {
+                memcpy(beta, fc->fields[i].data, sizeof(beta));
+            }
         }
-        return new LayerNormPlugin(name, epsilon);
+        return new LayerNormPlugin(name, epsilon, gamma, beta);
     }
 
     IPluginV2 *deserializePlugin(const char *name, const void *serialData, size_t serialLength) noexcept override

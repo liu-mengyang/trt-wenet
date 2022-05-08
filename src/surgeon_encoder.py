@@ -175,7 +175,10 @@ castaf_not_1931 = not_1931.o()
 not_1931.outputs = castaf_not_1931.outputs
 castaf_not_1931.outputs.clear()
 
-# replace layernorm with plugin
+add_1968 = [node for node in graph.nodes if node.name=="Add_1968"][0]
+print(add_1968.o(0))
+print(add_1968.o(1))
+
 pos_ln = ['Div_93', 'Div_113', 'Div_189', 'Div_219', 'Div_239', 'Div_250',
           'Div_270', 'Div_346', 'Div_376', 'Div_396', 'Div_407', 'Div_427',
           'Div_503', 'Div_533', 'Div_553', 'Div_564', 'Div_584', 'Div_660',
@@ -188,8 +191,29 @@ pos_ln = ['Div_93', 'Div_113', 'Div_189', 'Div_219', 'Div_239', 'Div_250',
           'Div_1663', 'Div_1683', 'Div_1759', 'Div_1789', 'Div_1809',
           'Div_1820', 'Div_1840', 'Div_1916', 'Div_1946', 'Div_1966',
           'Div_1977']
+
+# replace layernorm with plugin
+pos_ln_1 = ['Div_93', 'Div_189', 'Div_219', 'Div_250',
+          'Div_346', 'Div_376', 'Div_407',
+          'Div_503', 'Div_533', 'Div_564', 'Div_660',
+          'Div_690', 'Div_721', 'Div_817', 'Div_847',
+          'Div_878', 'Div_974', 'Div_1004',
+          'Div_1035', 'Div_1131', 'Div_1161',
+          'Div_1192', 'Div_1288', 'Div_1318',
+          'Div_1349', 'Div_1445', 'Div_1475',
+          'Div_1506', 'Div_1602', 'Div_1632',
+          'Div_1663', 'Div_1759', 'Div_1789',
+          'Div_1820', 'Div_1916', 'Div_1946']
+pos_ln_2 = ['Div_1966', 'Div_1977']
+pos_ln_3 = ['Div_239', 'Div_396', 'Div_553', 'Div_710', 'Div_867', 'Div_1024',
+            'Div_1181', 'Div_1338', 'Div_1495', 'Div_1652', 'Div_1809']
+pos_ln_4 = ['Div_113', 'Div_270', 'Div_427', 'Div_584', 'Div_741', 'Div_898',
+            'Div_1055', 'Div_1212', 'Div_1369', 'Div_1526', 'Div_1683',
+            'Div_1840']
+pos_ln_dic = {1:pos_ln_1, 2:pos_ln_2, 3:pos_ln_3, 4:pos_ln_4}
 ln_id = 0
 for div_node_name in pos_ln:
+    print(div_node_name)
     ln_id += 1
     div_node = [node for node in graph.nodes if node.name==div_node_name][0]
     pluginVariable = gs.Variable("MyLN"+str(ln_id), np.dtype(np.float32), None)
@@ -197,10 +221,31 @@ for div_node_name in pos_ln:
                         "MyLN"+str(ln_id),
                         inputs=[div_node.i(0).i(0).outputs[0]],
                         outputs=[pluginVariable],
-                        attrs={"epsilon:": div_node.i(1).i().i(1).attrs['value'].values.reshape(1)})
+                        attrs={"epsilon:": div_node.i(1).i().i(1).attrs['value'].values.reshape(1),
+                            "gamma:": div_node.o().inputs[1].values.reshape(256),
+                            "beta:": div_node.o().o().inputs[1].values.reshape(256)})
     graph.nodes.append(pluginNode)
-    div_node.o().inputs[0] = pluginVariable
-    div_node.outputs.clear()
+    # print(add_1968.o(0))
+    # print(add_1968.o(1))
+    node_lst = []
+    if div_node_name in pos_ln_1:
+        key = 1
+    elif div_node_name in pos_ln_2:
+        key = 2
+    elif div_node_name in pos_ln_3:
+        key = 3
+    elif div_node_name in pos_ln_4:
+        key = 4
+    for i in range(key):
+        if div_node_name == "Div_1977":
+            pluginNode.outputs[0] = div_node.o().o().outputs[0]
+            break
+        node_lst.append(div_node.o().o().o(i))
+    for node in node_lst:
+        node.inputs[0] = pluginVariable
+
+    div_node.o().o().outputs.clear()
+        
 
 graph.cleanup().toposort()
 onnx.save(gs.export_onnx(graph), "encoder_sed.onnx")
