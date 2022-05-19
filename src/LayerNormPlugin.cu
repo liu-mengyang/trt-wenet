@@ -6,8 +6,11 @@ PluginFieldCollection    LayerNormPluginCreator::fc_ {};
 std::vector<PluginField> LayerNormPluginCreator::attr_;
 
 template<typename T>
-__inline__ __device__ T Div(T a, T b) {
-    return a / b;
+__inline__ __device__ T Div(T a, T b);
+
+template<>
+__inline__ __device__ float Div<float>(float a, float b) {
+  return a / b;
 }
 
 /* https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
@@ -69,7 +72,7 @@ __inline__ __device__ void WelfordWarpReduce(T thread_mean, T thread_m2, T threa
   *mean = thread_mean;
   *m2 = thread_m2;
   *count = thread_count;
-  for (int delta = 32 / 2; delta > 0; delta /= 2) { // 一次次Reduce
+  for (int delta = 1; delta < 32; delta *= 2) { // 一次次Reduce
     // 获取高位Thread中的mean m2 count
     // 应该还是有很多“空转”，这里明显第一次计算是前16个Thread获取后16个Thread的数据计算，而后16个Thread中的数据就没用了
     T b_mean = __shfl_down_sync(0xffffffff, *mean, delta, 32);
@@ -78,6 +81,32 @@ __inline__ __device__ void WelfordWarpReduce(T thread_mean, T thread_m2, T threa
     // 执行计算
     WelfordCombine(b_mean, b_m2, b_count, mean, m2, count);
   }
+}
+
+
+template<typename T> // 并行Reduce式Welford
+__inline__ __device__ void WelfordWarpReduce8(T thread_mean, T thread_m2, T thread_count, T* mean, T* m2, T* count) {
+  *mean = thread_mean;
+  *m2 = thread_m2;
+  *count = thread_count;
+  for (int delta = 1; delta < 8; delta *= 2) { // 一次次Reduce
+    // 获取高位Thread中的mean m2 count
+    // 应该还是有很多“空转”，这里明显第一次计算是前16个Thread获取后16个Thread的数据计算，而后16个Thread中的数据就没用了
+    T b_mean = __shfl_down_sync(0xffffffff, *mean, delta, 32);
+    T b_m2 = __shfl_down_sync(0xffffffff, *m2, delta, 32);
+    T b_count = __shfl_down_sync(0xffffffff, *count, delta, 32);
+    // 执行计算
+    WelfordCombine(b_mean, b_m2, b_count, mean, m2, count);
+  }
+}
+
+template<typename T> // 并行Reduce式Welford，算完取数据
+__inline__ __device__ void WelfordWarpAllReduce8(T thread_mean, T thread_m2, T thread_count, T* mean, T* m2, T* count) {
+  WelfordWarpReduce8<T>(thread_mean, thread_m2, thread_count, mean, m2, count);
+  // 最后就是从Warp的第一个Thread里面取数据
+  *mean = __shfl_sync(0xffffffff, *mean, 0, 32);
+  *m2 = __shfl_sync(0xffffffff, *m2, 0, 32);
+  *count = __shfl_sync(0xffffffff, *count, 0, 32);
 }
 
 template<typename T> // 并行Reduce式Welford，算完取数据
@@ -117,7 +146,7 @@ __global__ void layerNormKernel(T *pInput, T *pOutput, float epsilon, const int 
         mean = s_mean[threadIdx.x];
         m2 = s_m2[threadIdx.x];
         count = s_count[threadIdx.x];
-        WelfordWarpAllReduce<T>(mean, m2, count, &mean, &m2, &count);
+        WelfordWarpAllReduce8<T>(mean, m2, count, &mean, &m2, &count);
     }
     __syncthreads();
 
@@ -146,11 +175,11 @@ int32_t LayerNormPlugin::enqueue(const PluginTensorDesc *inputDesc, const Plugin
     }
     if (inputDesc[0].type == DataType::kFLOAT)
     {
-        layerNormKernel<float><<<nBlock, 256, 0, stream>>>((float*)inputs[0], (float*)outputs[0], epsilon_, N);
+        layerNormKernel<float><<<nBlock, 1024, 0, stream>>>((float*)inputs[0], (float*)outputs[0], epsilon_, N);
     }
     else if (inputDesc[0].type == DataType::kHALF)
     {
-        layerNormKernel<float><<<nBlock, 256, 0, stream>>>((float*)inputs[0], (float*)outputs[0], epsilon_, N);
+        layerNormKernel<float><<<nBlock, 1024, 0, stream>>>((float*)inputs[0], (float*)outputs[0], epsilon_, N);
     }
     return 0;
 }
